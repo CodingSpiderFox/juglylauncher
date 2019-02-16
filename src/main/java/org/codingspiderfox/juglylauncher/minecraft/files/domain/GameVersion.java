@@ -1,6 +1,5 @@
 package org.codingspiderfox.juglylauncher.minecraft.files.domain;
 
-import jdk.jfr.DataAmount;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,7 +18,7 @@ public class GameVersion {
 
     private String assets;
 
-    private VersionJsonDownloads aownloads;
+    private VersionJsonDownloads downloads;
 
     private String id;
 
