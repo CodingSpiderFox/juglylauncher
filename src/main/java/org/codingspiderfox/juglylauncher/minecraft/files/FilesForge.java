@@ -33,10 +33,10 @@ public class FilesForge {
         this.downloadHelper = downloadHelper;
     }
 
-    public Dictionary<String, String> installForge(String sForgeVersion) throws IOException {
+    public Map<String, String> installForge(String sForgeVersion) throws IOException {
         this.sForgeVersion = sForgeVersion;
 
-        Dictionary<String, String> ClassPath = new Hashtable<>(); // Library list for startup
+        Map<String, String> ClassPath = new HashMap<>(); // Library list for startup
         String localLibraryPath = libraryDir + sForgeTree.replace('/', '\\') + sForgeVersion;
         String localFilePath = localLibraryPath + "forge-" + sForgeVersion + "-installer.jar";
         String remoteFile = sForgeMaven + sForgeTree + sForgeVersion + "/forge-" + sForgeVersion + "-installer.jar";
@@ -114,7 +114,7 @@ public class FilesForge {
             ObjectMapper mapper = new ObjectMapper();
 
             ForgeInstaller MCForge = mapper.readValue(fileContents.trim(), ForgeInstaller.class);
-            
+
             // replace vanilla settings
             MCMojang.setMainClass(MCForge.getVersionInfo().getMainClass());
             MCMojang.setMinecraftArguments(MCForge.getVersionInfo().getMinecraftArguments());
@@ -122,8 +122,9 @@ public class FilesForge {
         return MCMojang;
     }
 
-    private Dictionary<String, String> DownloadForgeLibraries(ForgeInstaller Forge) throws IOException {
-        Dictionary<String, String> ClassPath = new Hashtable<>(); // Library list for startup
+    private Map<String, String> DownloadForgeLibraries(ForgeInstaller Forge) throws IOException {
+
+        Map<String, String> ClassPath = new Hashtable<>(); // Library list for startup
 
         for(ForgeInstallerLibrary Lib : Forge.getVersionInfo().getLibraries())
         {
@@ -140,7 +141,7 @@ public class FilesForge {
                 sRemotePath = "http://central.maven.org/maven2/";
             }
 
-            sLibPath = String.format("{0}/{1}/{2}/{1}-{2}.jar", sLibName[0].replace('.', '/'), sLibName[1], sLibName[2]);
+            sLibPath = String.format("%s/%s/%s/%s-%s.jar", sLibName[0].replace('.', '/'), sLibName[1], sLibName[2], sLibName[1], sLibName[2]);
             sLocalPath += "\\" + sLibPath.replace('/', '\\');
             sRemotePath += sLibPath;
 
@@ -158,8 +159,9 @@ public class FilesForge {
         return ClassPath;
     }
 
-    private Dictionary<String, String> DownloadForgeLibraries(ForgeVersion forge) throws IOException {
-        Dictionary<String, String> classPath = new Hashtable<>(); // Library list for startup
+    private Map<String, String> DownloadForgeLibraries(ForgeVersion forge) throws IOException {
+
+        Map<String, String> classPath = new Hashtable<>(); // Library list for startup
 
         for(Library lib : forge.getLibraries())
         {

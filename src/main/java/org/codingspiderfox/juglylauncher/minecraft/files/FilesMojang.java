@@ -8,9 +8,11 @@ import org.codingspiderfox.juglylauncher.internet.Http;
 import org.codingspiderfox.juglylauncher.minecraft.files.domain.*;
 import org.codingspiderfox.juglylauncher.settings.Configuration;
 import org.codingspiderfox.juglylauncher.util.Directory;
+import org.codingspiderfox.juglylauncher.util.FileInfo;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.*;
 
 public class FilesMojang {
@@ -54,7 +56,7 @@ public class FilesMojang {
         }
     }
 
-    public List<String> GetVersions(boolean bSnapshots, boolean bBeta, boolean bAlpha) {
+    public List<String> GetVersions(boolean bSnapshots, boolean bBeta, boolean bAlpha) throws IOException {
         List<String> versions = new ArrayList<>();
 
         try {
@@ -115,8 +117,9 @@ public class FilesMojang {
             VersionsVersion version = GetVersion(mcversion);
 
             // delete and download json
-            if (File.Exists(versionDir + "/" + mcversion + "/" + mcversion + ".json")) {
-                File.Delete(versionDir + "/" + mcversion + "/" + mcversion + ".json");
+            File jsonFile = new File(versionDir + "/" + mcversion + "/" + mcversion + ".json");
+            if (jsonFile.exists()) {
+                jsonFile.delete();
             }
 
             downloadHelper.downloadFileTo(version.getUrl(), versionDir + "/" + mcversion + "/" + mcversion + ".json", false, null, null);
@@ -125,11 +128,11 @@ public class FilesMojang {
         }
     }
 
-    public Dictionary<String, String> DownloadClientLibraries(GameVersion MC) throws IOException {
+    public Map<String, String> DownloadClientLibraries(GameVersion MC) throws IOException, IllegalAccessException, NoSuchFieldException, ClassNotFoundException {
         Configuration c = new Configuration();
         String sJavaArch = c.getJavaArch();
 
-        Dictionary<String, String> ClassPath = new Hashtable<>(); // Library list for startup
+        Map<String, String> ClassPath = new Hashtable<>(); // Library list for startup
 
         for (Library lib : MC.getLibraries()) {
             VersionJsonDownload download;
@@ -140,23 +143,34 @@ public class FilesMojang {
                 for (LibraryRule Rule : lib.getRules()) {
                     if (Rule.Action == "allow") {
                         if (Rule.Os == null) bWindows = true;
-                        else if (Rule.Os.Name == null || Rule.Os.Name == "windows") bWindows = true;
+                        else if (Rule.Os.Name == null || Rule.Os.Name.equals("windows")) bWindows = true;
                     }
-                    if (Rule.Action == "disallow" && Rule.Os.Name == "windows") bWindows = false;
+                    if (Rule.Action .equals("disallow") && Rule.Os.Name.equals("windows")) bWindows = false;
                 }
                 if (bWindows == false) continue;
             }
 
             // Natives ?
             if (lib.getNatives() != null) {
-                download = lib.getDownloads().getClassifiers().GetType().GetProperty(lib.getNatives().getWindows()
-                        .replace("${arch}", sJavaArch).replace("-", "")).GetValue(lib.getDownloads().getClassifiers(), null);
+
+                Class<?> clazz = Class.forName("org.codingspiderfox.juglylauncher.minecraft.files.domain.Classifiers");
+
+                //TODO support windows/osx
+                String fieldName = lib.getNatives().getLinux()
+                        .replace("${arch}", sJavaArch).replace("-", "");
+
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+
+                download = (VersionJsonDownload) field.get(lib.getDownloads().getClassifiers());
+
+
             } else {
                 download = lib.getDownloads().getArtifact();
             }
             download.setPath(libraryDir + "/" + download.getPath().replace("/", "\\"));
 
-            downloadHelper.downloadFileTo(download.getUrl(), download.getPath());
+            downloadHelper.downloadFileTo(download.getUrl(), download.getPath(), true, null, null);
 
             // extract pack if needed
             if (lib.getExtract() != null) {
@@ -177,51 +191,52 @@ public class FilesMojang {
         return ClassPath;
     }
 
-    public void DownloadClientAssets(GameVersion MC) {
+    public void DownloadClientAssets(GameVersion MC) throws IOException {
         // get assetIndex Json
         downloadHelper.downloadFileTo(MC.getAssetIndex().getUrl(), assetsDir + "/indexes/" + MC.getAssetIndex().getId() + ".json", true, null, MC.getAssetIndex().getSha1());
 
         // load assetIndex Json File
-        Assets assets = Assets.FromJson(File.ReadAllText(assetsDir + @ "\indexes\" + MC.AssetIndex.Id + ".json
-        ").Trim());
 
-        for (Set<String, AssetObject> Asset : assets.getObjects()) {
+        Assets assets = Assets.FromJson(File.ReadAllText(assetsDir + "/indexes/" + MC.getAssetIndex().Id + ".json").trim());
+
+        for (Map.Entry<String, AssetObject> Asset : assets.getObjects()) {
             String sRemotePath = assetsFileServerURL + "/" + Asset.Value.Hash.SubString(0, 2) + "/" + Asset.Value.Hash;
             String sLocalPath = assetsDir + @ "\objects\" + Asset.Value.Hash.SubString(0, 2) + " / " + Asset.Value.Hash;
 
-            if (!Directory.Exists(sLocalPath.SubString(0, sLocalPath.LastIndexOf( @
-            "\")))) Directory.CreateDirectory(sLocalPath.SubString(0, sLocalPath.LastIndexOf(@"\")));
+            if (!Directory.Exists(sLocalPath.substring(0, sLocalPath.LastIndexOf("/")))) Directory.CreateDirectory(sLocalPath.substring(0, sLocalPath.LastIndexOf("/")));
 
             // Download the File
             downloadHelper.downloadFileTo(sRemotePath, sLocalPath, true, null, null);
 
             if (assets.isVirtual() == true) {
-                String slegacyPath = assetsDir + @ "\virtual\legacy\" + Asset.Key.Replace(" / ", @"\");
-                if (!Directory.Exists(slegacyPath.SubString(0, slegacyPath.LastIndexOf( @
-                "\")))) Directory.CreateDirectory(slegacyPath.SubString(0, slegacyPath.LastIndexOf(@"\")));
-                File.Copy(sLocalPath, slegacyPath, true);
+                String slegacyPath = assetsDir + "/virtual/legacy/" + Asset.getKey().replace(" / ", "/");
+                if (!Directory.Exists(slegacyPath.substring(0, slegacyPath.LastIndexOf("/")))) Directory.CreateDirectory(slegacyPath.subString(0, slegacyPath.LastIndexOf("/")));
+
             }
         }
     }
 
-    public void DownloadClientJar(GameVersion MC) throws Exception {
+    public void downloadClientJar(GameVersion MC) throws Exception {
+
         boolean download = false;
         long filesize;
         String fileSHA;
 
         try {
-            if (File.Exists(versionDir + "/" + MC.getId() + "/" + MC.getId() + ".jar")) {
+            File jarFile = new File(versionDir + "/" + MC.getId() + "/" + MC.getId() + ".jar");
+            if (jarFile.exists()) {
                 // check filesize
-                filesize = new FileInfo(versionDir + "/" + MC.getId() + "/" + MC.getId() + ".jar").Length;
+                filesize = new FileInfo(versionDir + "/" + MC.getId() + "/" + MC.getId() + ".jar").getLength();
                 if (MC.getDownloads().getClient().getSize() != filesize) {
-                    File.Delete(versionDir + "/" + MC.getId() + "/" + MC.getId() + ".jar");
+
+                    jarFile.delete();
                     download = true;
                 }
 
                 // check SHA
-                fileSHA = downloadHelper.ComputeHashSHA(versionDir + "/" + MC.getId() + "/" + MC.getId() + ".jar");
-                if (!MC.Downloads.Client.Sha1.Equals(fileSHA)) {
-                    File.Delete(versionDir + "/" + MC.getId() + "/" + MC.getId() + ".jar");
+                fileSHA = downloadHelper.computeHashSHA(versionDir + "/" + MC.getId() + "/" + MC.getId() + ".jar");
+                if (!MC.getDownloads().getClient().getSha1().equals(fileSHA)) {
+                    jarFile.delete();
                     download = true;
                 }
             } else download = true;
@@ -233,7 +248,7 @@ public class FilesMojang {
 
             // post download check
             // check filesize
-            filesize = new FileInfo(versionDir + "/" + MC.getId() + "/" + MC.getId() + ".jar").Length;
+            filesize = new FileInfo(versionDir + "/" + MC.getId() + "/" + MC.getId() + ".jar").getLength();
             if (MC.getDownloads().getClient().getSize() != filesize) {
                 throw new Exception("Error downloading file: " + MC.getId() + ".jar (filesize mismatch)");
             }
@@ -248,7 +263,7 @@ public class FilesMojang {
         }
     }
 
-    public void DownloadServerJar(GameVersion MC, String localPath =null) throws Exception {
+    public void downloadServerJar(GameVersion MC, String localPath) throws Exception {
         boolean download = false;
         long filesize;
         String fileSHA;
@@ -260,30 +275,32 @@ public class FilesMojang {
         }
 
         try {
-            if (File.Exists(localFilePath + "/" + MC.getId() + ".jar")) {
+            File jarFile = new File(localFilePath + "/" + MC.getId() + ".jar");
+            if (jarFile.exists()) {
                 // check filesize
-                filesize = new FileInfo(localFilePath + "/" + MC.getId() + ".jar").Length;
+                filesize = new FileInfo(localFilePath + "/" + MC.getId() + ".jar").getLength();
                 if (MC.getDownloads().getServer().getSize() != filesize) {
-                    File.Delete(localFilePath + "/" + MC.getId() + ".jar");
+                    jarFile.delete();
                     download = true;
                 }
 
                 // check SHA
                 fileSHA = downloadHelper.computeHashSHA(localFilePath + "/" + MC.getId() + ".jar");
                 if (!MC.getDownloads().getServer().getSha1().equals(fileSHA)) {
-                    File.Delete(localFilePath + "/" + MC.getId() + ".jar");
+                    jarFile.delete();
                     download = true;
                 }
             } else download = true;
 
             // download jar
             if (download == true) {
-                downloadHelper.downloadFileTo(MC.getDownloads().getServer().getUrl(), localFilePath + "/" + MC.getId() + ".jar", true, null, null);
+                downloadHelper.downloadFileTo(MC.getDownloads().getServer().getUrl(),
+                        localFilePath + "/" + MC.getId() + ".jar", true, null, null);
             }
 
             // post download check
             // check filesize
-            filesize = new FileInfo(localFilePath + "/" + MC.getId() + ".jar").Length;
+            filesize = new FileInfo(localFilePath + "/" + MC.getId() + ".jar").getLength();
             if (MC.getDownloads().getServer().getSize() != filesize) {
                 throw new Exception("Error downloading file: " + MC.getId() + ".jar (filesize mismatch)");
             }

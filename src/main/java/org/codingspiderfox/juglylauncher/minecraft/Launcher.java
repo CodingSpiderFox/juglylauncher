@@ -1,10 +1,13 @@
 package org.codingspiderfox.juglylauncher.minecraft;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.FilenameUtils;
 import org.codingspiderfox.juglylauncher.accountmanager.Manager;
 import org.codingspiderfox.juglylauncher.domain.*;
 import org.codingspiderfox.juglylauncher.internet.DownloadHelper;
 import org.codingspiderfox.juglylauncher.internet.Http;
+import org.codingspiderfox.juglylauncher.minecraft.files.FilesForge;
+import org.codingspiderfox.juglylauncher.minecraft.files.FilesMojang;
 import org.codingspiderfox.juglylauncher.minecraft.files.domain.GameElement;
 import org.codingspiderfox.juglylauncher.minecraft.files.domain.GameVersion;
 import org.codingspiderfox.juglylauncher.minecraft.files.domain.JvmElement;
@@ -15,16 +18,15 @@ import org.codingspiderfox.juglylauncher.util.DirectoryInfo;
 import org.codingspiderfox.juglylauncher.util.Environment;
 import org.codingspiderfox.juglylauncher.util.FileInfo;
 
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Dictionary;
-import java.util.Hashtable;
+import java.util.*;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
-class Launcher
+public class Launcher
 {
     // events
     //public event EventHandler<FormWindowStateEventArgs> RestoreWindow;
@@ -141,12 +143,12 @@ class Launcher
     {
         List<String> dirs = new ArrayList<String>(Directory.EnumerateDirectories(_sPacksDir));
         PacksInstalled = new MCPacksInstalled();
-        for (var dir:dirs)
+        for (String dir:dirs)
         {
             if (File.Exists(dir + "/version") && File.Exists(dir + "/pack.json"))
             {
                 MCPacksInstalledPack pack = new MCPacksInstalledPack();
-                pack.setName(dir.SubString(dir.LastIndexOf("//") + 1));
+                pack.setName(dir.substring(dir.LastIndexOf("//") + 1));
                 pack.setCurrentVersion(File.ReadAllText(dir + "/version").Trim());
 
                 if (File.Exists(dir + "/selected")) pack.getSelectedVersion() = File.ReadAllText(dir + "/selected").Trim();
@@ -191,17 +193,22 @@ class Launcher
     // Get ModFolderContents
     public List<String> GetModFolderContents(String sPackname, ArrayList<String> sFileExtensions)
     {
-        List<String> Mods = new List<String>();
+        List<String> Mods = new ArrayList<String>();
         try
         {
-            String sModsPath = String.format(@"{0}/{1}/minecraft/mods/", _sPacksDir, sPackname);
-            Mods =  Directory.EnumerateFiles(sModsPath, "*.*")
-                    .Where(f => sFileExtensions.Contains(Path.GetExtension(f).ToLower()))
-                    .ToList();
+            String sModsPath = String.format("%s/%s/minecraft/mods/", _sPacksDir, sPackname);
+            File folder = new File(sModsPath);
+            File[] listOfFiles = folder.listFiles();
+            for(File file : listOfFiles) {
+                if(sFileExtensions.contains(FilenameUtils.getExtension(file.getName())) {
+                    Mods.add(file.getName());
+                }
+            }
+
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Kein Mod Verzeichniss gefunden. Vanilla ?", "kein Modverzeichniss", MessageBoxButtons.OK,MessageBoxIcon.Error);
+            //MessageBox.Show("Kein Mod Verzeichniss gefunden. Vanilla ?", "kein Modverzeichniss", MessageBoxButtons.OK,MessageBoxIcon.Error);
             throw ex;
         }
 
@@ -213,14 +220,14 @@ class Launcher
     {
         FileStream fs = new FileStream(sFileName, FileMode.Open, FileAccess.Read);
         ZipFile zf = new ZipFile(fs);
-        ZipEntry ze = zf.GetEntry("mcmod.info");
+        ZipEntry ze = zf.getEntry("mcmod.info");
         String result = null;
         byte[] ret = null;
         if (ze != null)
         {
             Stream s = zf.GetInputStream(ze);
             ret = new byte[ze.Size];
-            s.Read(ret, 0, ret.Length);
+            s.Read(ret, 0, ret.length);
             result = System.Text.Encoding.UTF8.GetString(ret).Trim();
         }
         zf.Close();
@@ -234,13 +241,13 @@ class Launcher
         if (offline == false)
         {
             MCAvailablePack Pack = GetAvailablePack(sPackName);
-            return Pack.RecommendedVersion;
+            return Pack.getRecommendedVersion();
         }
 
         else
         {
             MCPacksInstalledPack Pack = GetInstalledPack(sPackName);
-            return Pack.CurrentVersion;
+            return Pack.getCurrentVersion();
         }
 
     }
@@ -259,7 +266,8 @@ class Launcher
     }
 
     public void StartPack(String sPackName, String sPackVersion) throws Exception {
-        Dictionary<String, String> ClassPath = new Hashtable<>(); // Library list for startup
+
+        Map<String, String> ClassPath = new Hashtable<>(); // Library list for startup
 
         FilesMojang MCMojangFiles = new FilesMojang(downloadHelper);
         MCMojangFiles.setLibraryDir(_sLibraryDir);
@@ -289,7 +297,7 @@ class Launcher
         // additional things for forge
         if (pack.getType().equals("forge"))
         {
-            Dictionary<String, String> ForgeClassPath = new Dictionary<String, String>(); // Library list for startup
+            HashMap<String, String> ForgeClassPath; // Library list for startup
             FilesForge MCForgeFiles = new FilesForge(downloadHelper);
             MCForgeFiles.setLibraryDir(_sLibraryDir);
             MCForgeFiles.setOfflineMode(offline);
@@ -298,13 +306,13 @@ class Launcher
             ForgeClassPath = MCForgeFiles.installForge(pack.getForgeVersion());
 
             //Merge Classpath
-            for (KeyValuePair<String, String> entry:ForgeClassPath)
+            for (Map.Entry<String, String> entry:ForgeClassPath.entrySet())
             {
-                if (ClassPath.ContainsKey(entry.Key))
+                if (ClassPath.(entry.getKey()))
                 {
-                    ClassPath.Remove(entry.Key);
+                    ClassPath.Remove(entry.getKey());
                 }
-                ClassPath.Add(entry.Key, entry.Value);
+                ClassPath.put(entry.Key, entry.Value);
             }
 
             // Merge startup parameter
@@ -440,7 +448,7 @@ class Launcher
         }
     }
 
-    private String BuildArgs(GameVersion MC, String sPackName, Dictionary<String, String> ClassPath)
+    private String BuildArgs(GameVersion MC, String sPackName, Map<String, String> classPath)
     {
         String args = null;
         String classpath = null;
@@ -513,7 +521,7 @@ class Launcher
                             // fix spaces in Json path
                             if(value.split("=").Last().Contains(" "))
                             {
-                                args += " " + value.split("=").First() + "=/"" + value.split("=").Last() + "/"";
+                                args += " " + value.split("=").First() + "=/" + value.split("=").Last() + "/";
                             }
                             else
                             {
@@ -561,28 +569,28 @@ class Launcher
         }
 
         // libraries
-        for (KeyValuePair<String, String> entry:ClassPath)
+        for (Map.Entry<String, String> entry:classPath.entrySet())
         {
-            classpath += String.format("/"{0}/";", entry.Value);
+            classpath += String.format("/%s/;", entry.getValue());
         }
 
         // version .jar
-        classpath += String.format("/"{0}//{1}//{1}.jar/" ", _sVersionDir, MC.getId());
+        classpath += String.format("/%s/%s/%s.jar/ ", _sVersionDir, MC.getId(), MC.getId());
 
         // fill placeholders
         args = args.replace("${auth_player_name}", Profile.getName());
         args = args.replace("${version_name}", MC.getId());
-        args = args.replace("${game_directory}", String.format("/"{0}//{1}//minecraft/"", _sPacksDir, sPackName));
-        args = args.replace("${assets_root}", String.format("/"{0}/"", _sAssetsDir));
-        args = args.replace("${game_assets}", String.format("/"{0}//virtual//legacy/"", _sAssetsDir));
+        args = args.replace("${game_directory}", String.format("/%s/%s/minecraft/", _sPacksDir, sPackName));
+        args = args.replace("${assets_root}", String.format("/%s/", _sAssetsDir);
+        args = args.replace("${game_assets}", String.format("/%s/virtual/legacy/", _sAssetsDir));
         args = args.replace("${assets_index_name}", MC.getAssets());
         args = args.replace("${auth_uuid}", Profile.getId());
         args = args.replace("${auth_access_token}", Acc.getAccessToken());
-        args = args.replace("${auth_session}", String.format("token:{0}:{1}", Acc.getAccessToken(), Profile.getId()));
+        args = args.replace("${auth_session}", String.format("token:%s:%s", Acc.getAccessToken(), Profile.getId()));
         args = args.replace("${user_properties}", "{}");
         args = args.replace("${user_type}", "Mojang");
         args = args.replace("${version_type}", MC.getType());
-        args = args.replace("${natives_directory}", "/"" + _sNativesDir + "/" + MC.getId() +"/"");
+        args = args.replace("${natives_directory}", "/" + _sNativesDir + "/" + MC.getId() +"/");
         args = args.replace("${classpath}", classpath);
         //args = args.replace("${launcher_name}", Application.ProductName); //TODO
         //args = args.replace("${launcher_version}", Application.ProductVersion); //TODO
@@ -663,31 +671,39 @@ class Launcher
         }
     }
 
-    private void DeletePack(String sPackName)
-    {
+    private void DeletePack(String sPackName) {
         String PackDir = _sPacksDir + "/" + sPackName;
 
         if (!Directory.Exists(PackDir)) return; // Pack did not exist
         // Delete Directories
         if (Directory.Exists(PackDir + "/minecraft/logs")) Directory.Delete(PackDir + "/minecraft/logs", true);
         if (Directory.Exists(PackDir + "/minecraft/mods")) Directory.Delete(PackDir + "/minecraft/mods", true);
-        if (Directory.Exists(PackDir + "/minecraft/modclasses")) Directory.Delete(PackDir + "/minecraft//modclasses", true);
+        if (Directory.Exists(PackDir + "/minecraft/modclasses"))
+            Directory.Delete(PackDir + "/minecraft//modclasses", true);
         if (Directory.Exists(PackDir + "/minecraft/config")) Directory.Delete(PackDir + "/minecraft/config", true);
         if (Directory.Exists(PackDir + "/minecraft/stats")) Directory.Delete(PackDir + "/minecraft/stats", true);
-        if (Directory.Exists(PackDir + "/minecraft/crash-reports")) Directory.Delete(PackDir + "/minecraft/crash-reports", true);
+        if (Directory.Exists(PackDir + "/minecraft/crash-reports"))
+            Directory.Delete(PackDir + "/minecraft/crash-reports", true);
         // Deleting .log Files
-        for (FileInfo f:new DirectoryInfo(PackDir + "/minecraft").GetFiles("*.log"))
-        f.Delete();
+        for (FileInfo f : new DirectoryInfo(PackDir + "/minecraft").GetFiles("*.log"))
+            f.Delete();
         // Deleting .lck Files
-        for (FileInfo f:new DirectoryInfo(PackDir + "/minecraft").GetFiles("*.lck"))
-        f.Delete();
+        for (FileInfo f : new DirectoryInfo(PackDir + "/minecraft").GetFiles("*.lck"))
+            f.Delete();
         // Deleting .1 Files
-        for (FileInfo f:new DirectoryInfo(PackDir + "/minecraft").GetFiles("*.1"))
-        f.Delete();
+        for (FileInfo f : new DirectoryInfo(PackDir + "/minecraft").GetFiles("*.1"))
+            f.Delete();
         // Deleting pack.json
-        if (File.Exists(PackDir + "/pack.json")) File.Delete(PackDir + "/pack.json");
+        File packDotJsonFile = new File(PackDir + "/pack.json");
+        if (packDotJsonFile.exists()) {
+            packDotJsonFile.delete();
+        }
         // Deleting version
-        if (File.Exists(PackDir + "/version")) File.Delete(PackDir + "/version");
+        File versionFile = new File(PackDir + "/version");
+        if (versionFile.exists()) {
+            versionFile.delete();
+        }
+
     }
 
     /*
