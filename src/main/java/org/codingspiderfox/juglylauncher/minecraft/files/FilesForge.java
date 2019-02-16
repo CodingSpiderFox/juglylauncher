@@ -1,22 +1,17 @@
 package org.codingspiderfox.juglylauncher.minecraft.files;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.io.FileUtils;
 import org.codingspiderfox.juglylauncher.internet.DownloadHelper;
 import org.codingspiderfox.juglylauncher.minecraft.files.domain.*;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Dictionary;
-import java.util.Hashtable;
-import java.util.List;
+import java.util.*;
 
 public class FilesForge {
 
@@ -63,26 +58,26 @@ public class FilesForge {
 
         // post 1.13 files
         File versionDotJsonFile = new File(libraryDir + sForgeTree.replace('/', '\\') + sForgeVersion + "/version.json");
+        File installProfileJsonFile = new File(libraryDir + sForgeTree.replace('/', '\\') + sForgeVersion + "/install_profile.json");
         if (versionDotJsonFile.exists()) {
             post_1_13 = true;
 
             String fileContents = FileUtils.readFileToString(versionDotJsonFile, "UTF-8");
             ObjectMapper mapper = new ObjectMapper();
-            Map<String,Object> map = mapper.readValue(json, Map.class);
 
-            ForgeVersion MCForge = ForgeVersion.FromJson(File.ReadAllText(libraryDir + sForgeTree.replace('/', '\\') + sForgeVersion +
-            "/version.json").trim());
+            ForgeVersion MCForge = mapper.readValue(fileContents.trim(), ForgeVersion.class);
             // download Forge libraries
             ClassPath = DownloadForgeLibraries(MCForge);
         }
-
         // pre 1.13 files
-        File installProfileJsonFile = new File(libraryDir + sForgeTree.replace('/', '\\') + sForgeVersion + "/install_profile.json");
         else if (installProfileJsonFile.exists())
         {
             post_1_13 = false;
-            ForgeInstaller MCForge = ForgeInstaller.FromJson(File.ReadAllText(libraryDir + sForgeTree.replace('/', '\\') + sForgeVersion +
-            "/install_profile.json").trim());
+
+            String fileContents = FileUtils.readFileToString(installProfileJsonFile, "UTF-8");
+            ObjectMapper mapper = new ObjectMapper();
+
+            ForgeInstaller MCForge = mapper.readValue(fileContents.trim(), ForgeInstaller.class);
             // download Forge libraries
             ClassPath = DownloadForgeLibraries(MCForge);
         }
@@ -93,10 +88,17 @@ public class FilesForge {
         return ClassPath;
     }
 
-    public GameVersion MergeArguments(GameVersion MCMojang) {
+    public GameVersion mergeArguments(GameVersion MCMojang) throws IOException {
+
         if (post_1_13 == true) {
-            ForgeVersion MCForge = ForgeVersion.FromJson(File.ReadAllText(libraryDir + sForgeTree.replace('/', '\\') + sForgeVersion +
-            "/version.json").trim());
+
+            File versionDotJsonFile = new File(libraryDir + sForgeTree.replace('/', '\\') + sForgeVersion + "/version.json");
+
+            String fileContents = FileUtils.readFileToString(versionDotJsonFile, "UTF-8");
+            ObjectMapper mapper = new ObjectMapper();
+
+            ForgeVersion MCForge = mapper.readValue(fileContents.trim(), ForgeVersion.class);
+
             // replace vanilla values
             MCMojang.setMainClass(MCForge.getMainClass());
             // append forge arguments
@@ -105,8 +107,14 @@ public class FilesForge {
             itemList.addAll(moreItems);
             MCMojang.getArguments().setGame(itemList.toArray(GameElement[]::new));
         } else {
-            ForgeInstaller MCForge = ForgeInstaller.FromJson(File.ReadAllText(libraryDir + sForgeTree.replace('/', '\\') + sForgeVersion +
-            "/install_profile.json").trim());
+
+            File installProfileJsonFile = new File(libraryDir + sForgeTree.replace('/', '\\') + sForgeVersion + "/install_profile.json");
+
+            String fileContents = FileUtils.readFileToString(installProfileJsonFile, "UTF-8");
+            ObjectMapper mapper = new ObjectMapper();
+
+            ForgeInstaller MCForge = mapper.readValue(fileContents.trim(), ForgeInstaller.class);
+            
             // replace vanilla settings
             MCMojang.setMainClass(MCForge.getVersionInfo().getMainClass());
             MCMojang.setMinecraftArguments(MCForge.getVersionInfo().getMinecraftArguments());
