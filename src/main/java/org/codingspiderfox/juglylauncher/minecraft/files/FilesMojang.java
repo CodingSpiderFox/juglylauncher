@@ -1,21 +1,38 @@
 package org.codingspiderfox.juglylauncher.minecraft.files;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
+import lombok.Setter;
 import org.codingspiderfox.juglylauncher.internet.DownloadHelper;
+import org.codingspiderfox.juglylauncher.internet.Http;
 import org.codingspiderfox.juglylauncher.minecraft.files.domain.*;
 import org.codingspiderfox.juglylauncher.settings.Configuration;
+import org.codingspiderfox.juglylauncher.util.Directory;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class FilesMojang {
     // remote path
-    private final String _sAssetsFileServer = "https://resources.download.minecraft.net";
-    private final String _VersionManifest = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
+    private final String assetsFileServerURL = "https://resources.download.minecraft.net";
+    private final String versionManifestURL = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
 
-    public String LibraryDir;
-    public String versionDir;
-    public String NativesDir;
-    public String AssetsDir;
-    public boolean OfflineMode;
+    @Getter
+    @Setter
+    private String libraryDir;
+    @Getter
+    @Setter
+    private String versionDir;
+    @Getter
+    @Setter
+    private String nativesDir;
+    @Getter
+    @Setter
+    private String assetsDir;
+    @Getter
+    @Setter
+    private boolean offlineMode;
 
     private GameVersionManifest _versions = null;
 
@@ -25,12 +42,13 @@ public class FilesMojang {
         this.downloadHelper = downloadHelper;
     }
 
-    private void GetVersionManifest() {
+    private void GetVersionManifest() throws IOException {
         try {
-            String sVersionManifest = Http.GET(_VersionManifest);
-            _versions = GameVersionManifest.FromJson(sVersionManifest);
-        } catch (WebException ex) {
-            throw ex;
+            String sVersionManifest = Http.get(versionManifestURL);
+
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            _versions = objectMapper.readValue(sVersionManifest, GameVersionManifest.class);
         } catch (Exception ex) {
             throw ex;
         }
@@ -107,7 +125,7 @@ public class FilesMojang {
         }
     }
 
-    public Dictionary<String, String> DownloadClientLibraries(GameVersion MC) {
+    public Dictionary<String, String> DownloadClientLibraries(GameVersion MC) throws IOException {
         Configuration c = new Configuration();
         String sJavaArch = c.getJavaArch();
 
@@ -131,20 +149,20 @@ public class FilesMojang {
 
             // Natives ?
             if (lib.getNatives() != null) {
-                download = lib.getDownloads().Classifiers.GetType().GetProperty(lib.Natives.Windows.Replace("${arch}", sJavaArch).Replace("-", "")).GetValue(lib.Downloads.Classifiers, null)
-                as VersionJsonDownload;
+                download = lib.getDownloads().getClassifiers().GetType().GetProperty(lib.getNatives().getWindows()
+                        .replace("${arch}", sJavaArch).replace("-", "")).GetValue(lib.getDownloads().getClassifiers(), null);
             } else {
                 download = lib.getDownloads().getArtifact();
             }
-            download.setPath(LibraryDir + "/" + download.getPath().replace("/", "\\"));
+            download.setPath(libraryDir + "/" + download.getPath().replace("/", "\\"));
 
             downloadHelper.downloadFileTo(download.getUrl(), download.getPath());
 
             // extract pack if needed
             if (lib.getExtract() != null) {
-                if (!Directory.Exists(NativesDir + "/" + MC.getId()))
-                    Directory.CreateDirectory(NativesDir + "/" + MC.getId());
-                downloadHelper.extractZipFiles(download.getPath(), NativesDir + "/" + MC.getId());
+                if (!Directory.Exists(nativesDir + "/" + MC.getId()))
+                    Directory.CreateDirectory(nativesDir + "/" + MC.getId());
+                downloadHelper.extractZipFiles(download.getPath(), nativesDir + "/" + MC.getId());
             } else {
                 //lLibraries.Add(download.Path); // files needed for startup
                 String[] libname = lib.getName().split("\\:");
@@ -161,15 +179,15 @@ public class FilesMojang {
 
     public void DownloadClientAssets(GameVersion MC) {
         // get assetIndex Json
-        downloadHelper.downloadFileTo(MC.getAssetIndex().getUrl(), AssetsDir + "/indexes/" + MC.getAssetIndex().getId() + ".json", true, null, MC.getAssetIndex().getSha1());
+        downloadHelper.downloadFileTo(MC.getAssetIndex().getUrl(), assetsDir + "/indexes/" + MC.getAssetIndex().getId() + ".json", true, null, MC.getAssetIndex().getSha1());
 
         // load assetIndex Json File
-        Assets assets = Assets.FromJson(File.ReadAllText(AssetsDir + @ "\indexes\" + MC.AssetIndex.Id + ".json
+        Assets assets = Assets.FromJson(File.ReadAllText(assetsDir + @ "\indexes\" + MC.AssetIndex.Id + ".json
         ").Trim());
 
         for (Set<String, AssetObject> Asset : assets.getObjects()) {
-            String sRemotePath = _sAssetsFileServer + "/" + Asset.Value.Hash.SubString(0, 2) + "/" + Asset.Value.Hash;
-            String sLocalPath = AssetsDir + @ "\objects\" + Asset.Value.Hash.SubString(0, 2) + " / " + Asset.Value.Hash;
+            String sRemotePath = assetsFileServerURL + "/" + Asset.Value.Hash.SubString(0, 2) + "/" + Asset.Value.Hash;
+            String sLocalPath = assetsDir + @ "\objects\" + Asset.Value.Hash.SubString(0, 2) + " / " + Asset.Value.Hash;
 
             if (!Directory.Exists(sLocalPath.SubString(0, sLocalPath.LastIndexOf( @
             "\")))) Directory.CreateDirectory(sLocalPath.SubString(0, sLocalPath.LastIndexOf(@"\")));
@@ -178,7 +196,7 @@ public class FilesMojang {
             downloadHelper.downloadFileTo(sRemotePath, sLocalPath, true, null, null);
 
             if (assets.isVirtual() == true) {
-                String slegacyPath = AssetsDir + @ "\virtual\legacy\" + Asset.Key.Replace(" / ", @"\");
+                String slegacyPath = assetsDir + @ "\virtual\legacy\" + Asset.Key.Replace(" / ", @"\");
                 if (!Directory.Exists(slegacyPath.SubString(0, slegacyPath.LastIndexOf( @
                 "\")))) Directory.CreateDirectory(slegacyPath.SubString(0, slegacyPath.LastIndexOf(@"\")));
                 File.Copy(sLocalPath, slegacyPath, true);

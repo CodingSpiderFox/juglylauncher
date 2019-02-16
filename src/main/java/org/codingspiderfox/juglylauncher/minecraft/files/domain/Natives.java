@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Natives {
 
-    public String Linux;
+    private String linux;
 
-    public String Osx;
+    private String osx;
 
-    public String Windows;
+    private String windows;
 }
