@@ -1,9 +1,11 @@
 package org.codingspiderfox.juglylauncher.minecraft.files.domain;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -37,4 +39,10 @@ public class GameVersion {
     private OffsetDateTime time;
 
     private String type;
+
+    public static GameVersion FromJson(String json) throws IOException {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.readValue(json, GameVersion.class);
+    }
 }

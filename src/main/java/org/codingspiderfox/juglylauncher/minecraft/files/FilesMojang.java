@@ -3,6 +3,8 @@ package org.codingspiderfox.juglylauncher.minecraft.files;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.codingspiderfox.juglylauncher.internet.DownloadHelper;
 import org.codingspiderfox.juglylauncher.internet.Http;
 import org.codingspiderfox.juglylauncher.minecraft.files.domain.*;
@@ -13,6 +15,7 @@ import org.codingspiderfox.juglylauncher.util.FileInfo;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.util.*;
 
 public class FilesMojang {
@@ -196,21 +199,22 @@ public class FilesMojang {
         downloadHelper.downloadFileTo(MC.getAssetIndex().getUrl(), assetsDir + "/indexes/" + MC.getAssetIndex().getId() + ".json", true, null, MC.getAssetIndex().getSha1());
 
         // load assetIndex Json File
+        String fileContents = FileUtils.readFileToString(
+                new File(assetsDir + "/indexes/" + MC.getAssetIndex().Id + ".json"), Charset.forName("UTF-8"));
+        Assets assets = Assets.FromJson(fileContents.trim());
 
-        Assets assets = Assets.FromJson(File.ReadAllText(assetsDir + "/indexes/" + MC.getAssetIndex().Id + ".json").trim());
+        for (Map.Entry<String, AssetObject> Asset : assets.getObjects().entrySet()) {
+            String sRemotePath = assetsFileServerURL + "/" + Asset.getValue().getHash().substring(0, 2) + "/" + Asset.getValue().getHash();
+            String sLocalPath = assetsDir + "/objects/" + Asset.getValue().getHash().substring(0, 2) + " / " + Asset.getValue().getHash();
 
-        for (Map.Entry<String, AssetObject> Asset : assets.getObjects()) {
-            String sRemotePath = assetsFileServerURL + "/" + Asset.Value.Hash.SubString(0, 2) + "/" + Asset.Value.Hash;
-            String sLocalPath = assetsDir + @ "\objects\" + Asset.Value.Hash.SubString(0, 2) + " / " + Asset.Value.Hash;
-
-            if (!Directory.Exists(sLocalPath.substring(0, sLocalPath.LastIndexOf("/")))) Directory.CreateDirectory(sLocalPath.substring(0, sLocalPath.LastIndexOf("/")));
+            if (!Directory.Exists(sLocalPath.substring(0, sLocalPath.lastIndexOf("/")))) Directory.CreateDirectory(sLocalPath.substring(0, sLocalPath.lastIndexOf("/")));
 
             // Download the File
             downloadHelper.downloadFileTo(sRemotePath, sLocalPath, true, null, null);
 
             if (assets.isVirtual() == true) {
                 String slegacyPath = assetsDir + "/virtual/legacy/" + Asset.getKey().replace(" / ", "/");
-                if (!Directory.Exists(slegacyPath.substring(0, slegacyPath.LastIndexOf("/")))) Directory.CreateDirectory(slegacyPath.subString(0, slegacyPath.LastIndexOf("/")));
+                if (!Directory.Exists(slegacyPath.substring(0, slegacyPath.lastIndexOf("/")))) Directory.CreateDirectory(slegacyPath.substring(0, slegacyPath.lastIndexOf("/")));
 
             }
         }
@@ -243,7 +247,8 @@ public class FilesMojang {
 
             // download jar
             if (download == true) {
-                downloadHelper.downloadFileTo(MC.getDownloads().getClient().getUrl(), versionDir + "/" + MC.getId() + "/" + MC.getId() + ".jar", true, null, null);
+                downloadHelper.downloadFileTo(MC.getDownloads().getClient().getUrl(),
+                        versionDir + "/" + MC.getId() + "/" + MC.getId() + ".jar", true, null, null);
             }
 
             // post download check
@@ -264,6 +269,7 @@ public class FilesMojang {
     }
 
     public void downloadServerJar(GameVersion MC, String localPath) throws Exception {
+
         boolean download = false;
         long filesize;
         String fileSHA;

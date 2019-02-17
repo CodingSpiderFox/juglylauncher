@@ -1,6 +1,8 @@
 package org.codingspiderfox.juglylauncher.minecraft;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.DataFormatReaders;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.codingspiderfox.juglylauncher.accountmanager.Manager;
 import org.codingspiderfox.juglylauncher.domain.*;
@@ -13,14 +15,14 @@ import org.codingspiderfox.juglylauncher.minecraft.files.domain.GameVersion;
 import org.codingspiderfox.juglylauncher.minecraft.files.domain.JvmElement;
 import org.codingspiderfox.juglylauncher.minecraft.files.domain.JvmRule;
 import org.codingspiderfox.juglylauncher.settings.Configuration;
-import org.codingspiderfox.juglylauncher.util.Directory;
-import org.codingspiderfox.juglylauncher.util.DirectoryInfo;
-import org.codingspiderfox.juglylauncher.util.Environment;
-import org.codingspiderfox.juglylauncher.util.FileInfo;
+import org.codingspiderfox.juglylauncher.util.*;
 
+import java.beans.EventHandler;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -43,7 +45,7 @@ public class Launcher
     public final String _sVersionDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/.minecraft/versions";
     public final String _sNativesDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "/.UglyLauncher/natives";
     // boolean
-    private final boolean offline = false;
+    private boolean offline = false;
     // Lists
 
 
@@ -60,7 +62,7 @@ public class Launcher
     // Open Pack folder
     public void OpenPackFolder(String sSelectedPack)
     {
-        if(Directory.Exists(_sPacksDir + "/" + sSelectedPack)) Process.Start(_sPacksDir + "/" + sSelectedPack);
+        if(Directory.Exists(_sPacksDir + "/" + sSelectedPack)) ProcessInfo.Start(_sPacksDir + "/" + sSelectedPack);
     }
 
     // Check Directories
@@ -105,7 +107,7 @@ public class Launcher
         return null;
     }
 
-    // get pack icon
+    /* get pack icon
     public Image GetPackIcon(MCAvailablePack Pack) {
         InputStream inputStream;
         try {
@@ -126,7 +128,8 @@ public class Launcher
     // get pack icon
     public Image GetPackIconOffline(MCPacksInstalledPack Pack)
     {
-        if (!File.Exists(_sPacksDir + "/" + Pack.Name + "/" + Pack.Name + ".png")) return null;
+        File imageFile = new File(_sPacksDir + "/" + Pack.getName() + "/" + Pack.getName() + ".png");
+        if (!imageFile.exists()) return null;
 
         MemoryStream ms = new MemoryStream();
 
@@ -136,23 +139,25 @@ public class Launcher
         fileStream.Read(ms.GetBuffer(), 0, (int)fileStream.Length);
 
         return Image.FromStream(ms);
-    }
+    }*/ //TODO images
 
     // Get installes packages
-    public void LoadInstalledPacks()
-    {
+    public void LoadInstalledPacks() throws IOException {
         List<String> dirs = new ArrayList<String>(Directory.EnumerateDirectories(_sPacksDir));
         PacksInstalled = new MCPacksInstalled();
         for (String dir:dirs)
         {
-            if (File.Exists(dir + "/version") && File.Exists(dir + "/pack.json"))
+            File dirInFilesystem = new File(dir + "/version");
+            File packJsonFile = new File(dir + "/pack.json");
+            if (dirInFilesystem.exists() && packJsonFile.exists())
             {
                 MCPacksInstalledPack pack = new MCPacksInstalledPack();
-                pack.setName(dir.substring(dir.LastIndexOf("//") + 1));
-                pack.setCurrentVersion(File.ReadAllText(dir + "/version").Trim());
+                pack.setName(dir.substring(dir.lastIndexOf("//") + 1));
+                pack.setCurrentVersion(FileUtils.readFileToString(new File(dir + "/version"), Charset.forName("UTF-8")).trim());
 
-                if (File.Exists(dir + "/selected")) pack.getSelectedVersion() = File.ReadAllText(dir + "/selected").Trim();
-                    else pack.getSelectedVersion() = "recommended";
+                File selectedDirInFilesystem = new File(dir + "/selected");
+                if (selectedDirInFilesystem.exists()) pack.setSelectedVersion(FileUtils.readFileToString(new File(dir + "/selected"), Charset.forName("UTF-8")).trim());
+                    else pack.setSelectedVersion("recommended");
                 PacksInstalled.packs.add(pack);
             }
         }
@@ -197,11 +202,11 @@ public class Launcher
         try
         {
             String sModsPath = String.format("%s/%s/minecraft/mods/", _sPacksDir, sPackname);
-            File folder = new File(sModsPath);
-            File[] listOfFiles = folder.listFiles();
-            for(File file : listOfFiles) {
-                if(sFileExtensions.contains(FilenameUtils.getExtension(file.getName())) {
-                    Mods.add(file.getName());
+            List<String> fileNames = Directory.EnumerateFiles(sModsPath, "*.*");
+
+            for(String fileName : fileNames) {
+                if(sFileExtensions.contains(FilenameUtils.getExtension(fileName))) {
+                    Mods.add(fileName);
                 }
             }
 
@@ -216,22 +221,22 @@ public class Launcher
     }
 
     // Get mcmod.info file as String
-    public String GetMcModInfo(String sFileName)
-    {
-        FileStream fs = new FileStream(sFileName, FileMode.Open, FileAccess.Read);
-        ZipFile zf = new ZipFile(fs);
-        ZipEntry ze = zf.getEntry("mcmod.info");
+    public String GetMcModInfo(String sFileName) throws IOException {
+
+        ZipFile zipFile = new ZipFile(new File(sFileName));
+        ZipEntry zipEntry = zipFile.getEntry("mcmod.info");
         String result = null;
-        byte[] ret = null;
-        if (ze != null)
+        byte[] bytes = null;
+
+        if (zipEntry != null)
         {
-            Stream s = zf.GetInputStream(ze);
-            ret = new byte[ze.Size];
-            s.Read(ret, 0, ret.length);
-            result = System.Text.Encoding.UTF8.GetString(ret).Trim();
+            InputStream inputStream = zipFile.getInputStream(zipEntry);
+            bytes = new byte[(int) zipEntry.getSize()];
+            inputStream.read(bytes, 0, bytes.length);
+            result = new String(bytes, StandardCharsets.UTF_8);
         }
-        zf.Close();
-        fs.Close();
+        zipFile.close();
+
 
         return result;
     }
@@ -252,10 +257,9 @@ public class Launcher
 
     }
 
-    public void SetSelectedVersion(String sPackName, String sVersion)
-    {
-        File.WriteAllText(_sPacksDir + "/" + sPackName + "/selected", sVersion);
-        Application.DoEvents(); // wait a little bit :)
+    public void SetSelectedVersion(String sPackName, String sVersion) throws IOException {
+        FileUtils.writeStringToFile(new File(_sPacksDir + "/" + sPackName + "/selected"), sVersion, Charset.forName("UTF-8"));
+        //Application.DoEvents(); // wait a little bit :) //TODO events
         LoadInstalledPacks();
     }
 
@@ -283,12 +287,14 @@ public class Launcher
         }
 
         // getting pack json file
-        MCPack pack = MCPack.FromJson(File.ReadAllText(_sPacksDir + "/" + sPackName + "/pack.json").Trim());
+        MCPack pack = MCPack.FromJson(FileUtils.readFileToString(
+                new File(_sPacksDir + "/" + sPackName + "/pack.json"), Charset.forName("UTF-8")).trim());
         // vanilla Minecraft
         MCMojangFiles.DownloadVersionJson(pack.getMCVersion());
-        GameVersion MCMojang = GameVersion.FromJson(File.ReadAllText(_sVersionDir + "/" + pack.getMCVersion() + "/" + pack.getMCVersion() + ".json").Trim());
+        GameVersion MCMojang = GameVersion.FromJson(FileUtils.readFileToString(
+                new File(_sVersionDir + "/" + pack.getMCVersion() + "/" + pack.getMCVersion() + ".json"), Charset.forName("UTF-8")).trim());
         // download game jar
-        MCMojangFiles.DownloadClientJar(MCMojang);
+        MCMojangFiles.downloadClientJar(MCMojang);
         // download libraries if needed
         ClassPath = MCMojangFiles.DownloadClientLibraries(MCMojang);
         // download assets if needed
@@ -297,7 +303,7 @@ public class Launcher
         // additional things for forge
         if (pack.getType().equals("forge"))
         {
-            HashMap<String, String> ForgeClassPath; // Library list for startup
+            Map<String, String> ForgeClassPath; // Library list for startup
             FilesForge MCForgeFiles = new FilesForge(downloadHelper);
             MCForgeFiles.setLibraryDir(_sLibraryDir);
             MCForgeFiles.setOfflineMode(offline);
@@ -308,15 +314,15 @@ public class Launcher
             //Merge Classpath
             for (Map.Entry<String, String> entry:ForgeClassPath.entrySet())
             {
-                if (ClassPath.(entry.getKey()))
+                if (ClassPath.containsKey(entry.getKey()))
                 {
-                    ClassPath.Remove(entry.getKey());
+                    ClassPath.remove(entry.getKey());
                 }
-                ClassPath.put(entry.Key, entry.Value);
+                ClassPath.put(entry.getKey(), entry.getValue());
             }
 
             // Merge startup parameter
-            MCMojang = MCForgeFiles.MergeArguments(MCMojang);
+            MCMojang = MCForgeFiles.mergeArguments(MCMojang);
         }
 
         // set selected version
@@ -332,7 +338,7 @@ public class Launcher
     {
 
         Configuration C = new Configuration();
-        Process minecraft = new Process();
+        ProcessInfo minecraft = new ProcessInfo();
 
         // check for "minecraft" folder
         if (!Directory.Exists(_sPacksDir + "/" + sPackName + "/minecraft")) Directory.CreateDirectory(_sPacksDir + "/" + sPackName + "/minecraft");
@@ -344,13 +350,14 @@ public class Launcher
         minecraft.StartInfo.RedirectStandardError = true;
         minecraft.StartInfo.UseShellExecute = false;
         minecraft.StartInfo.CreateNoWindow = true;
-        minecraft.OutputDataReceived += new DataReceivedEventHandler(Minecraft_OutputDataReceived);
-        minecraft.ErrorDataReceived += new DataReceivedEventHandler(Minecraft_ErrorDataReceived);
-        minecraft.Exited += new EventHandler(Minecraft_Exited);
-        minecraft.EnableRaisingEvents = true;
+        //TODO eventhandlers
+        //minecraft.OutputDataReceived += new DataReceivedEventHandler(Minecraft_OutputDataReceived);
+        //minecraft.ErrorDataReceived += new DataReceivedEventHandler(Minecraft_ErrorDataReceived);
+        //minecraft.Exited += new EventHandler(Minecraft_Exited);
+        //minecraft.EnableRaisingEvents = true;
 
         // load console
-        if (C.getShowConsole() == 1)
+        /*if (C.getShowConsole() == 1)
         {
             CloseOldConsole();
             _console = new FrmConsole();
@@ -359,7 +366,7 @@ public class Launcher
             _console.AddLine(String.format("UglyLauncher-Version: {0}", Application.ProductVersion),Color.Blue);
             _console.AddLine("Using Java-Version: " + C.GetJavaPath() + " (" + C.GetJavaArch()+ "bit)", Color.Blue);
             _console.AddLine("Startparameter:" + args, Color.Blue);
-        }
+        }*/
 
         // start minecraft
         minecraft.Start();
@@ -367,16 +374,16 @@ public class Launcher
         minecraft.BeginErrorReadLine();
 
         // raise event
-        EventHandler<FormWindowStateEventArgs> handler = RestoreWindow;
-        FormWindowStateEventArgs args2 = new FormWindowStateEventArgs
+        //EventHandler<FormWindowStateEventArgs> handler = RestoreWindow; //TODO eventhandler
+        /*FormWindowStateEventArgs args2 = new FormWindowStateEventArgs
         {
             WindowState = FormWindowState.Minimized,
                     MCExitCode = -1
         };
-        handler?.Invoke(this, args2);
+        handler?.Invoke(this, args2);*/ //TODO
     }
 
-    private void CloseOldConsole()
+    /*private void CloseOldConsole()
     {
         FormCollection fc = Application.OpenForms;
 
@@ -447,6 +454,7 @@ public class Launcher
             }
         }
     }
+    */
 
     private String BuildArgs(GameVersion MC, String sPackName, Map<String, String> classPath)
     {
@@ -490,7 +498,7 @@ public class Launcher
                                     {
                                         String text = Environment.OSVersion.Version.ToString();
                                         Regex r = new Regex(Rule.Os.Version, RegexOptions.IgnoreCase);
-                                        Match m = r.Match(text);
+                                        DataFormatReaders.Match m = r.Match(text);
                                         if (!m.Success) bWindows = false;
                                     }
 

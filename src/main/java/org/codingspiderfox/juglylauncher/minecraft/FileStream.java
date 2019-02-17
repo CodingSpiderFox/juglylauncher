@@ -18,5 +18,5 @@ public class FileStream extends FileInputStream {
         super(fdObj);
     }
 
-    public FileStream()
+}
 

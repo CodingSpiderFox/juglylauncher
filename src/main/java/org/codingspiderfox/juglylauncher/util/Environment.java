@@ -8,4 +8,7 @@ public class Environment {
     }
 
     public static SpecialFolder SpecialFolder;
+
+    public class OSVersion {
+    }
 }

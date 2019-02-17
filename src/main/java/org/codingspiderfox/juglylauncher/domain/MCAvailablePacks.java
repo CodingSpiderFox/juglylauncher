@@ -16,6 +16,6 @@ public class MCAvailablePacks {
 
     public static MCAvailablePacks fromJson (String json) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.readValue(json, MCAvailablePacks.class)
+        return objectMapper.readValue(json, MCAvailablePacks.class);
     }
 }
