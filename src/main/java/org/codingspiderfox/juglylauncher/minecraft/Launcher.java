@@ -496,7 +496,7 @@ public class Launcher
                                     // check version
                                     if (Rule.Os.Version != null)
                                     {
-                                        String text = Environment.OSVersion.Version.ToString();
+                                        String text = Environment.OSVersion.Version;
                                         Regex r = new Regex(Rule.Os.Version, RegexOptions.IgnoreCase);
                                         DataFormatReaders.Match m = r.Match(text);
                                         if (!m.Success) bWindows = false;

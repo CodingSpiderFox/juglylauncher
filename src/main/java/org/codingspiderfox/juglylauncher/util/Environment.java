@@ -10,5 +10,7 @@ public class Environment {
     public static SpecialFolder SpecialFolder;
 
     public class OSVersion {
+        public String Version = "test";
+
     }
 }
