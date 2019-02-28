@@ -5,6 +5,7 @@ import org.codingspiderfox.juglylauncher.util.RegistryKey;
 import org.codingspiderfox.juglylauncher.util.RegistryValueKind;
 import org.codingspiderfox.juglylauncher.util.RegistryView;
 
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -223,26 +224,31 @@ public class Configuration {
 
     // Registry Handler
     private String GetRegString(String sRegKey) {
-        RegistryKey key = Registry.CurrentUser.OpenSubKey(sRegPath);
+        /*RegistryKey key = Registry.CurrentUser.OpenSubKey(sRegPath);
         if (key == null) return null;
         return key.GetValue(sRegKey, null);
+        */
+        return "";
     }
 
     private int GetRegInt(String sRegKey) {
-        RegistryKey key = Registry.CurrentUser.OpenSubKey(sRegPath);
+        /*RegistryKey key = Registry.CurrentUser.OpenSubKey(sRegPath);
         if (key == null) return -1;
-        return Integer.parseInt(key.GetValue(sRegKey, -1));
+        return Integer.parseInt(key.GetValue(sRegKey, -1));*/
+        return -1;
     }
 
     private String SetRegString(String sRegKey, String sRegValue) {
-        RegistryKey key = Registry.CurrentUser.CreateSubKey(sRegPath);
+        /*RegistryKey key = Registry.CurrentUser.CreateSubKey(sRegPath);
         key.SetValue(sRegKey, sRegValue, RegistryValueKind.String);
-        return sRegValue;
+        return sRegValue;*/
+        return "";
     }
 
     private int SetRegInt(String sRegKey, int iRegValue) {
-        RegistryKey key = Registry.CurrentUser.CreateSubKey(sRegPath);
+        /*RegistryKey key = Registry.CurrentUser.CreateSubKey(sRegPath);
         key.SetValue(sRegKey, iRegValue, RegistryValueKind.DWord);
-        return iRegValue;
+        return iRegValue;*/
+        return -1;
     }
 }

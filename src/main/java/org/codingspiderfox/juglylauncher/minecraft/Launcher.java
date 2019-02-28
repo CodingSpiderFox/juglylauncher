@@ -496,7 +496,7 @@ public class Launcher
                                     // check version
                                     if (Rule.Os.Version != null)
                                     {
-                                        String text = Environment.OSVersion.Version;
+                                        //String text = Environment.OSVersion.Version;//TODO
                                         Regex r = new Regex(Rule.Os.Version, RegexOptions.IgnoreCase);
                                         DataFormatReaders.Match m = r.Match(text);
                                         if (!m.Success) bWindows = false;
@@ -527,9 +527,10 @@ public class Launcher
                         for(String value:jvme.JvmClass.Value.getStringArray())
                         {
                             // fix spaces in Json path
-                            if(value.split("=").Last().Contains(" "))
+                            String[] values =  value.split("=");
+                            if(values[values.length-1].contains(" "))
                             {
-                                args += " " + value.split("=").First() + "=/" + value.split("=").Last() + "/";
+                                args += " " + values[0] + "=/" + values[values.length-1] + "/";
                             }
                             else
                             {
@@ -589,7 +590,7 @@ public class Launcher
         args = args.replace("${auth_player_name}", Profile.getName());
         args = args.replace("${version_name}", MC.getId());
         args = args.replace("${game_directory}", String.format("/%s/%s/minecraft/", _sPacksDir, sPackName));
-        args = args.replace("${assets_root}", String.format("/%s/", _sAssetsDir);
+        args = args.replace("${assets_root}", String.format("/%s/", _sAssetsDir));
         args = args.replace("${game_assets}", String.format("/%s/virtual/legacy/", _sAssetsDir));
         args = args.replace("${assets_index_name}", MC.getAssets());
         args = args.replace("${auth_uuid}", Profile.getId());

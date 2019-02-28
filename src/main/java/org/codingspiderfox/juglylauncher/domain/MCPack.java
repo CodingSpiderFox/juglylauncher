@@ -26,4 +26,8 @@ public class MCPack {
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.readValue(json, MCPack.class);
     }
+
+    public Object ToJson() {
+        return null;
+    }
 }
