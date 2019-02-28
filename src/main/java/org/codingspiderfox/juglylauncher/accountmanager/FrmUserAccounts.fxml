@@ -4,7 +4,7 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="505.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="505.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.codingspiderfox.juglylauncher.accountmanager.FrmUserAccountsController">
    <children>
       <ListView layoutX="14.0" layoutY="14.0" prefHeight="271.0" prefWidth="331.0" />
       <Button fx:id="btnAdd" layoutX="353.0" layoutY="14.0" mnemonicParsing="false" onAction="#handleAddButton" prefHeight="25.0" prefWidth="140.0" text="Hinzufügen" />

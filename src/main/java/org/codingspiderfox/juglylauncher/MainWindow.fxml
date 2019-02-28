@@ -8,17 +8,17 @@
 <?import javafx.scene.paint.*?>
 <?import javafx.scene.text.*?>
 
-<VBox prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<VBox prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.codingspiderfox.juglylauncher.MainWindowController">
   <children>
     <MenuBar VBox.vgrow="NEVER">
       <menus>
         <Menu mnemonicParsing="false" text="Launcher">
           <items>
             <MenuItem mnemonicParsing="false" text="Reload package list" />
-            <MenuItem mnemonicParsing="false" onAction="s" text="Quit" />
+            <MenuItem mnemonicParsing="false" onAction="#handleQuitAction" text="Quit" />
           </items>
         </Menu>
-        <Menu mnemonicParsing="false" text="Account management" />
+        <Menu mnemonicParsing="false" onAction="#handleAccountManagementAction" text="Account management" />
             <Menu mnemonicParsing="false" text="Edit package" />
             <Menu mnemonicParsing="false" text="Settings" />
             <Menu mnemonicParsing="false" text="Info" />
