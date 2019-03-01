@@ -24,7 +24,7 @@ public class FrmUserAccountsController {
 
 
     public void handleAddButton(ActionEvent actionEvent) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("FrmAddUser.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("../../../../../resources/fxml/FrmAddUser.fxml"));
         Parent root1 = (Parent) fxmlLoader.load();
         Stage stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL);

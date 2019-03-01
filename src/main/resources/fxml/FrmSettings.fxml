@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="559.0" prefWidth="458.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+fx:controller="org.codingspiderfox.juglylauncher.settings.FrmSettingsController">
+   <children>
+      <VBox prefHeight="559.0" prefWidth="458.0">
+         <children>
+            <CheckBox fx:id="cbReopenUglyLauncherOnMCExit" mnemonicParsing="false" text="Re-open ugly launcher after minecraft exited" />
+            <CheckBox fx:id="cbShowConsole" mnemonicParsing="false" text="Show console" />
+            <CheckBox fx:id="cbKeepConsole" mnemonicParsing="false" text="Keep console open after minecraft exited" />
+            <ComboBox fx:id="cmbJavaVersion" prefWidth="150.0" />
+            <TextField fx:id="txtJavaMinMemory" prefHeight="25.0" prefWidth="20.0" />
+            <TextField fx:id="txtJavaMaxMemory" />
+            <CheckBox fx:id="cbUseGarbageCollector" mnemonicParsing="false" text="Use garbage collector" />
+            <HBox alignment="BOTTOM_RIGHT" prefHeight="100.0" prefWidth="200.0" spacing="20.0">
+               <children>
+                  <Button fx:id="btnCancel" mnemonicParsing="false" onAction="#handleCancelButton" text="Cancel" />
+                  <Button fx:id="btnSave" mnemonicParsing="false" onAction="#handleSaveButton" text="Save" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</Pane>
+#

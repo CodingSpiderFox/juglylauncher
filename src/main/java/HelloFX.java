@@ -1,4 +1,5 @@
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -12,29 +13,28 @@ import java.io.IOException;
 
 public class HelloFX extends Application {
 
+    private static Stage primaryStageObj;
+
     @Override
-    public void start(Stage stage) throws InterruptedException, IOException {
-        String javaVersion = System.getProperty("java.version");
-        String javafxVersion = System.getProperty("javafx.version");
-        Label label = new Label("Hello, JavaFX " + javafxVersion + ", running on Java " + javaVersion + ".");
-        Label label2 = new Label("Hello, JavaFX " + javafxVersion + ", running on Java " + javaVersion + ".");
-        Scene scene = new Scene(new StackPane(label, label2), 640, 480);
-        stage.setScene(scene);
+    public void start(Stage stage) throws IOException {
+        primaryStageObj = stage;
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/FrmMain.fxml"));
+        Parent root = (Parent) fxmlLoader.load();
+        stage.initStyle(StageStyle.DECORATED);
+        stage.setTitle("uglylauncher");
+        stage.setScene(new Scene(root));
         stage.show();
-        label.setText("as");
 
-
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("org/codingspiderfox/juglylauncher/MainWindow.fxml"));
-        Parent root1 = (Parent) fxmlLoader.load();
-        stage.initModality(Modality.APPLICATION_MODAL);
-        stage.initStyle(StageStyle.UNDECORATED);
-        stage.setTitle("ABC");
-        stage.setScene(new Scene(root1));
-        stage.show();
+        stage.setOnCloseRequest(e -> Platform.exit());
     }
 
     public static void main(String[] args) {
         launch();
+    }
+
+
+    public static Stage getPrimaryStage() {
+        return primaryStageObj;
     }
 
 }

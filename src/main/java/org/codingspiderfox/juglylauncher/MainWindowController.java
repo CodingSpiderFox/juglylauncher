@@ -32,7 +32,7 @@ public class MainWindowController {
     }
 
     public void handleAccountManagementAction(ActionEvent actionEvent) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("org/codingspiderfox/juglylauncher/accountmanager/FrmUserAccounts"));
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("../../../../resources/fxml/FrmUserAccounts.fxml"));
         Parent root1 = (Parent) fxmlLoader.load();
         Stage stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL);

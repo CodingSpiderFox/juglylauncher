@@ -497,8 +497,9 @@ public class Launcher
                                     if (Rule.Os.Version != null)
                                     {
                                         //String text = Environment.OSVersion.Version;//TODO
+                                        String text = "TODO_VERSION";
                                         Regex r = new Regex(Rule.Os.Version, RegexOptions.IgnoreCase);
-                                        DataFormatReaders.Match m = r.Match(text);
+                                        RegexMatch m = r.Match(text);
                                         if (!m.Success) bWindows = false;
                                     }
 
@@ -666,10 +667,10 @@ public class Launcher
             pack.setType("vanilla");
             pack.setMCVersion(version.getVersion());
 
-            File.WriteAllText(_sPacksDir + "/" + sPackName +  "/pack.json", pack.ToJson());
+            FileImpl.WriteAllText(_sPacksDir + "/" + sPackName +  "/pack.json", pack.ToJson());
 
             // write version file
-            File.WriteAllText(_sPacksDir + "/" + sPackName + "/version", version.getVersion());
+            FileImpl.WriteAllText(_sPacksDir + "/" + sPackName + "/version", version.getVersion());
         }
 
         // check for "minecraft" folder
