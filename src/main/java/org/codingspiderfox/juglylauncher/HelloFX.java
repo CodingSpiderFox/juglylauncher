@@ -1,9 +1,10 @@
+package org.codingspiderfox.juglylauncher;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -22,7 +23,9 @@ public class HelloFX extends Application {
         Parent root = (Parent) fxmlLoader.load();
         stage.initStyle(StageStyle.DECORATED);
         stage.setTitle("uglylauncher");
-        stage.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(getClass().getResource("demo.css").toExternalForm());
+        stage.setScene(scene);
         stage.show();
 
         stage.setOnCloseRequest(e -> Platform.exit());

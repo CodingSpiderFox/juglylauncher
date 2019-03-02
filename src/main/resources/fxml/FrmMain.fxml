@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
@@ -8,7 +9,7 @@
 
 <VBox prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.codingspiderfox.juglylauncher.MainWindowController">
   <children>
-    <MenuBar VBox.vgrow="NEVER">
+    <MenuBar fx:id="mnBar" VBox.vgrow="NEVER">
       <menus>
         <Menu mnemonicParsing="false" text="Launcher">
           <items>
@@ -16,7 +17,7 @@
             <MenuItem mnemonicParsing="false" onAction="#handleQuitAction" text="Quit" />
           </items>
         </Menu>
-        <Menu mnemonicParsing="false" onAction="#handleAccountManagementAction" text="Account management" />
+        <Menu fx:id="mnAccountManagement" mnemonicParsing="false" onAction="#handleAccountManagementAction" text="Account management" />
             <Menu mnemonicParsing="false" text="Edit package" />
             <Menu mnemonicParsing="false" text="Settings" />
             <Menu mnemonicParsing="false" text="Info" />

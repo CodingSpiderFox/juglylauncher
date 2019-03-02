@@ -5,7 +5,6 @@ import org.codingspiderfox.juglylauncher.util.RegistryKey;
 import org.codingspiderfox.juglylauncher.util.RegistryValueKind;
 import org.codingspiderfox.juglylauncher.util.RegistryView;
 
-import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
 
